@@ -7,6 +7,7 @@ import asyncio
 import argparse
 import threading
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 import gradio as gr
 from fastapi import FastAPI
@@ -44,19 +45,33 @@ def run(
     """Run the Reachy Mini conversation app."""
     # Putting these dependencies here makes the dashboard faster to load when the conversation app is installed
     from reachy_mini_conversation_app.moves import MovementManager
+    from reachy_mini_conversation_app.config import config as app_config
+    from reachy_mini_conversation_app.config import set_custom_profile
     from reachy_mini_conversation_app.console import LocalStream
     from reachy_mini_conversation_app.openai_realtime import OpenaiRealtimeHandler
+    from reachy_mini_conversation_app.soul_integration import SOUL_DIR, create_soul_profile
     from reachy_mini_conversation_app.tools.core_tools import ToolDependencies
     from reachy_mini_conversation_app.audio.head_wobbler import HeadWobbler
 
     logger = setup_logger(args.debug)
     logger.info("Starting Reachy Mini Conversation App")
 
+    # Convert soul/ files into a standard profile + prompts library entry
+    if SOUL_DIR.exists():
+        if create_soul_profile():
+            logger.info("Soul profile generated from soul/ directory")
+        else:
+            logger.warning("Failed to generate soul profile from soul/ directory")
+
+    # Default to soul profile if no profile is explicitly set and it exists
+    if not app_config.REACHY_MINI_CUSTOM_PROFILE:
+        soul_profile_dir = Path(__file__).parent / "profiles" / "soul"
+        if (soul_profile_dir / "instructions.txt").exists():
+            set_custom_profile("soul")
+            logger.info("Defaulting to soul profile")
+
     if args.no_camera and args.head_tracker is not None:
-        logger.warning(
-            "Head tracking disabled: --no-camera flag is set. "
-            "Remove --no-camera to enable head tracking."
-        )
+        logger.warning("Head tracking disabled: --no-camera flag is set. Remove --no-camera to enable head tracking.")
 
     if robot is None:
         try:
@@ -68,25 +83,17 @@ def run(
             robot = ReachyMini(**robot_kwargs)
 
         except TimeoutError as e:
-            logger.error(
-                "Connection timeout: Failed to connect to Reachy Mini daemon. "
-                f"Details: {e}"
-            )
+            logger.error(f"Connection timeout: Failed to connect to Reachy Mini daemon. Details: {e}")
             log_connection_troubleshooting(logger, args.robot_name)
             sys.exit(1)
 
         except ConnectionError as e:
-            logger.error(
-                "Connection failed: Unable to establish connection to Reachy Mini. "
-                f"Details: {e}"
-            )
+            logger.error(f"Connection failed: Unable to establish connection to Reachy Mini. Details: {e}")
             log_connection_troubleshooting(logger, args.robot_name)
             sys.exit(1)
 
         except Exception as e:
-            logger.error(
-                f"Unexpected error during robot initialization: {type(e).__name__}: {e}"
-            )
+            logger.error(f"Unexpected error during robot initialization: {type(e).__name__}: {e}")
             logger.error("Please check your configuration and try again.")
             sys.exit(1)
 

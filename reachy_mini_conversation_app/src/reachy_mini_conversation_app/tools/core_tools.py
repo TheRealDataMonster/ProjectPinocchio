@@ -32,7 +32,6 @@ ALL_TOOL_SPECS: List[Dict[str, Any]] = []
 _TOOLS_INITIALIZED = False
 
 
-
 def get_concrete_subclasses(base: type[Tool]) -> List[type[Tool]]:
     """Recursively find all concrete (non-abstract) subclasses of a base class."""
     result: List[type[Tool]] = []
@@ -190,11 +189,9 @@ def _initialize_tools() -> None:
     _TOOLS_INITIALIZED = True
 
 
-_initialize_tools()
-
-
 def get_tool_specs(exclusion_list: list[str] = []) -> list[Dict[str, Any]]:
     """Get tool specs, optionally excluding some tools."""
+    _initialize_tools()
     return [spec for spec in ALL_TOOL_SPECS if spec.get("name") not in exclusion_list]
 
 
@@ -210,6 +207,7 @@ def _safe_load_obj(args_json: str) -> Dict[str, Any]:
 
 async def dispatch_tool_call(tool_name: str, args_json: str, deps: ToolDependencies) -> Dict[str, Any]:
     """Dispatch a tool call by name with JSON args and dependencies."""
+    _initialize_tools()
     tool = ALL_TOOLS.get(tool_name)
 
     if not tool:
