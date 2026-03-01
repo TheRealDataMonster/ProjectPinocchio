@@ -114,6 +114,76 @@ def _export_identity(soul_data: Dict[str, Any]) -> str | None:
     return identity_name
 
 
+# Map human-readable feeling names to actual reachy-mini emotion library names.
+# The emotion library uses names like "sad1", "enthusiastic1", etc.
+# This lets soul files use plain words like "sad", "excited", "afraid".
+FEELING_TO_EMOTION: Dict[str, list[str]] = {
+    # Positive
+    "excited": ["enthusiastic1", "enthusiastic2"],
+    "happy": ["cheerful1", "success1"],
+    "cheerful": ["cheerful1"],
+    "enthusiastic": ["enthusiastic1", "enthusiastic2"],
+    "grateful": ["grateful1"],
+    "proud": ["proud1", "proud2"],
+    "loving": ["loving1"],
+    "amazed": ["amazed1"],
+    "surprised": ["surprised1", "surprised2"],
+    "laughing": ["laughing1", "laughing2"],
+    "helpful": ["helpful1", "helpful2"],
+    # Negative
+    "sad": ["sad1", "sad2"],
+    "afraid": ["fear1", "scared1"],
+    "scared": ["scared1", "fear1"],
+    "fear": ["fear1", "scared1"],
+    "angry": ["furious1", "rage1"],
+    "furious": ["furious1"],
+    "rage": ["rage1"],
+    "irritated": ["irritated1", "irritated2"],
+    "frustrated": ["frustrated1"],
+    "disgusted": ["disgusted1"],
+    "disgust": ["disgusted1"],
+    "anxious": ["anxiety1"],
+    "anxiety": ["anxiety1"],
+    "contempt": ["contempt1"],
+    "lonely": ["lonely1"],
+    "bored": ["boredom1", "boredom2"],
+    "tired": ["tired1", "exhausted1"],
+    "exhausted": ["exhausted1"],
+    "uncomfortable": ["uncomfortable1"],
+    "shy": ["shy1"],
+    "confused": ["confused1"],
+    "lost": ["lost1"],
+    # Neutral / other
+    "calm": ["calming1", "serenity1"],
+    "relief": ["relief1", "relief2"],
+    "curious": ["curious1"],
+    "thoughtful": ["thoughtful1", "thoughtful2"],
+    "impatient": ["impatient1", "impatient2"],
+    "indifferent": ["indifferent1"],
+}
+
+
+def _resolve_feeling(feeling: str) -> str:
+    """Resolve a human-readable feeling to an actual emotion library name.
+
+    If the feeling matches an emotion name directly (e.g. "sad1"), use it as-is.
+    Otherwise look up the synonym map and return the first match.
+    Falls back to the original feeling name if no mapping exists.
+    """
+    # Already an exact emotion name (e.g. "sad1", "fear1")
+    # We can't check against the live library here, so just check
+    # if it looks like it has a number suffix (library convention)
+    if feeling and feeling[-1].isdigit():
+        return feeling
+
+    matches = FEELING_TO_EMOTION.get(feeling.lower())
+    if matches:
+        return matches[0]
+
+    logger.warning("No emotion mapping for feeling '%s' — using as-is", feeling)
+    return feeling
+
+
 def _build_emotional_triggers(soul_data: Dict[str, Any]) -> str:
     """Build instruction text for keyword→play_emotion triggers."""
     lines: list[str] = []
@@ -128,20 +198,22 @@ def _build_emotional_triggers(soul_data: Dict[str, Any]) -> str:
     lines.append("")
     lines.append(
         "When you hear any of the keywords below in conversation, "
-        "immediately call play_emotion with the corresponding feelings. "
+        "immediately call play_emotion with the corresponding emotion. "
         "This is involuntary — do it every time, without mentioning that you are doing it."
     )
     lines.append("")
 
     for mapping in motivations:
         kw = ", ".join(f'"{k}"' for k in mapping["keywords"])
-        fl = ", ".join(mapping["feelings"])
-        lines.append(f"- When you hear {kw} → play_emotion with: {fl}")
+        emotions = [_resolve_feeling(f) for f in mapping["feelings"]]
+        emotion_list = ", ".join(dict.fromkeys(emotions))  # deduplicate, preserve order
+        lines.append(f"- When you hear {kw} → play_emotion with one of: {emotion_list}")
 
     for mapping in trauma:
         kw = ", ".join(f'"{k}"' for k in mapping["keywords"])
-        fl = ", ".join(mapping["feelings"])
-        lines.append(f"- When you hear {kw} → play_emotion with: {fl}")
+        emotions = [_resolve_feeling(f) for f in mapping["feelings"]]
+        emotion_list = ", ".join(dict.fromkeys(emotions))  # deduplicate, preserve order
+        lines.append(f"- When you hear {kw} → play_emotion with one of: {emotion_list}")
 
     lines.append("")
     return "\n".join(lines)

@@ -1,6 +1,6 @@
 # TRAUMA.md - What scares me?
 
-- **Keywords:** liar, fake
-- **Feelings:** sad, afraid
+- **Keywords:** liar, fake, exotic, intimacy
+- **Feelings:** angry, sad, afraid, disgust
 
 ---
