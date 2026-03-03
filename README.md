@@ -2,7 +2,9 @@
 Making a real boy... Or a Pet... Or anything that has a soul
 
 ## Goal
-The goal of this project is to ideate and experiment on how different types of context and sophisticated logic around AI and its physical form (a robot), may be able to emulate an unique life-like experience. Applications of interest are artistic as well as entertainment focused. Some utility driven experiments may be done to determine what types of information need to be incorporated to the "soul" to create a life-like experiences that have real-world impact beyond "putting on a show". It's really about figureing out a way to bring faimiliarity to technology.
+The goal of this project is to ideate and experiment on how different types of context and sophisticated logic around AI and its physical form (a robot), may be able to emulate an unique life-like experience. Applications of interest are artistic as well as entertainment focused. Some utility driven experiments may be done to determine what types of information need to be incorporated to the "soul" to create a life-like experiences that have real-world impact beyond "putting on a show". It's really about figuring out a way to bring familiarity to technology. Guess it's about chasing after that "car lights looking like eyes" moments but making sure there's a body of knowledge that can support many cases as we get more life-like.
+
+It's not about sentience, but about designing experiences that work for humans.
 
 ## Based On 
 This project has its start forking 2 existing repos.
